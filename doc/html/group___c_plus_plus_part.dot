@@ -1,0 +1,23 @@
+digraph "SaliMLib core library"
+{
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir=LR;
+  Node6 [label="SaliMLib Semaphor",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__semaphor.html"];
+  Node1 [label="SaliMLib helper functions",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__helper_functions.html",tooltip="helper inline functions are simplify some operations in the library "];
+  Node7 [label="SaliMLib Containers\l with fixed size",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__fixed_containers.html"];
+  Node2 [label="SaliMLib Tick functions",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__tick_functions.html",tooltip="This functions used for work with system tick count. "];
+  Node8 [label="SaliMLib Algorithms\l for fixed-size containers",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__container_algorithms.html"];
+  Node3 [label="SaliMLib functions\l for task creation",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__task_functions.html",tooltip="This functions used for task creation. "];
+  Node5 [label="SaliMLib Mutex",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__mutex.html"];
+  Node0 [label="SaliMLib core library",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black"];
+  Node4 [label="SaliMLib functions\l for event waiting",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__wait_functions.html"];
+  Node0->Node1 [shape=plaintext, dir="back", style="solid"];
+  Node0->Node2 [shape=plaintext, dir="back", style="solid"];
+  Node0->Node3 [shape=plaintext, dir="back", style="solid"];
+  Node0->Node4 [shape=plaintext, dir="back", style="solid"];
+  Node0->Node5 [shape=plaintext, dir="back", style="solid"];
+  Node0->Node6 [shape=plaintext, dir="back", style="solid"];
+  Node0->Node7 [shape=plaintext, dir="back", style="solid"];
+  Node0->Node8 [shape=plaintext, dir="back", style="solid"];
+}
