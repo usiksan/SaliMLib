@@ -45,13 +45,14 @@
    History
      v0.1  created library core as alternative to RTOS and state-machine algorithms
      v0.2  refactoring fixed containers to unified interface
+     v0.3  appended smUpperRound template function
    */
 #ifndef SALIMCORE_H
 #define SALIMCORE_H
 
 
 #define SM_VERSION_MAJOR 0
-#define SM_VERSION_MINOR 2
+#define SM_VERSION_MINOR 3
 
 
 
@@ -133,6 +134,17 @@ SM_BEGIN_NAMESPACE
 inline char smDigitToHexLow( int digit ) { digit &= 0xf; return digit < 10 ? digit + '0' : digit + 'a' - 10; }
 
 
+
+//!
+//! \brief smAbs Template function to calculate absolute of signed value
+//! \param val   Source signed value
+//! \return      Absolute of signed value
+//!
+template <typename SmValue>
+inline SmValue smAbs( SmValue val ) { return val < 0 ? -val : val; }
+
+
+
 //!
 //! \brief smMin Template function to determine minimum from two values
 //! \param v1    First value to compare
@@ -161,6 +173,16 @@ inline SmValue smMax( SmValue v1, SmValue v2 ) { return v1 > v2 ? v1 : v2; }
 //!
 template <class SmValue>
 inline SmValue smBound( SmValue minVal, SmValue val, SmValue maxVal ) { return val < minVal ? minVal : (val > maxVal ? maxVal : val); }
+
+
+//!
+//! \brief smUpperRound Rounds value val inside bound. For example, if val = 15 and bound = 10 then rounded value will be 5.
+//! \param val          Value to be need rounded
+//! \param bound        Bound inside round
+//! \return             Rounded value
+//!
+template <class SmValue>
+inline SmValue smUpperRound( SmValue val, SmValue bound ) { return val >= bound ? val - bound : val; }
 
 //! @} helperFunctions
 
@@ -315,7 +337,7 @@ void smWaitClass( SmClass cls )
 template <class SmClass>
 void smWaitClassPtr( SmClass *cls )
   {
-  smWait<SmClass>( cls, [] ( SmClass *ptr ) -> bool { return ptr(); } );
+  smWait<SmClass>( cls, [] ( SmClass *ptr ) -> bool { return (*ptr)(); } );
   }
 
 
@@ -600,7 +622,7 @@ class SmFixedQueue {
     //! \param index index is value from 0 to count. When index eq 0 then return head element
     //! \return      Element with index
     //!
-    Item &at( int index ) const { return mBuffer[round(mHead + index)]; }
+    Item &at( int index ) { return mBuffer[smUpperRound(mHead + index, queueSize)]; }
 
     //!
     //! \brief waitItem Waits until there is at least one element in the container (Common fixedContainer interface)
@@ -634,7 +656,7 @@ class SmFixedQueue {
     //! \brief head Return head element
     //! \return     Element at head
     //!
-    Item &head() const { return mBuffer[mHead]; }
+    Item &head() { return mBuffer[mHead]; }
 
     //!
     //! \brief deque Retrieves an item from the queue
@@ -664,14 +686,12 @@ class SmFixedQueue {
     //! \brief continueDeque Remove block of count elements from queue
     //! \param count         Count of removed elements
     //!
-    void  continueDeque( int count ) { mHead = round( mHead + count ); }
+    void  continueDeque( int count ) { mHead = smUpperRound( mHead + count, queueSize ); }
 
   private:
-    int   round( int index ) const { return index >= queueSize ? index - queueSize : index; }
+    int   headNext() { int ptr = mHead; mHead = smUpperRound( mHead + 1, queueSize ); return ptr; }
 
-    int   headNext() { int ptr = mHead; mHead = round( mHead + 1 ); return ptr; }
-
-    int   tailNext() { int ptr = mTail; mTail = round( mTail + 1 ); return ptr; }
+    int   tailNext() { int ptr = mTail; mTail = smUpperRound( mTail + 1, queueSize ); return ptr; }
   };
 
 
@@ -713,7 +733,7 @@ class SmFixedStack {
     //! \param index index is value from 0 to count. When index eq 0 then return top stack element
     //! \return      Element with index
     //!
-    Item &at( int index ) const { return mBuffer[mTop + index]; }
+    Item &at( int index ) { return mBuffer[mTop + index]; }
 
     //!
     //! \brief waitItem Waits until there is at least one element in the container (Common fixedContainer interface)
@@ -801,7 +821,7 @@ class SmFixedBuffer {
     //! \param index index is value from 0 to count. When index eq 0 then return first element
     //! \return      Element with index
     //!
-    Item &at( int index ) const { return mBuffer[index]; }
+    Item &at( int index ) { return mBuffer[index]; }
 
     //!
     //! \brief waitItem Waits until there is at least one element in the container (Common fixedContainer interface)
@@ -930,16 +950,23 @@ class SmContainerItemWaiter {
 
     SmContainer &mContainer; //!< Container
     int          mLastCount; //!< Last count of scanned items in container
+    int          mCountMax;  //!< Max count of scanned items
     SmItem       mItemEoln;  //!< Item end of line representation
   public:
-    SmContainerItemWaiter( SmItem item, SmContainer &container ) : mContainer(container), mLastCount(0), mItemEoln(item) {}
+    SmContainerItemWaiter( SmItem item, SmContainer &container, int countMax ) : mContainer(container), mLastCount(0), mCountMax(countMax), mItemEoln(item) {}
 
-    int  count() const { return mLastCount; }
+    int  countNetto() const { return mLastCount; }
+
+    int  countBrutto() const { return mLastCount + 1; }
+
+    bool isMaxReached() const { return mLastCount == mCountMax; }
 
     bool operator () () {
-      while( mLastCount < mContainer->itemCount() )
-        if( mContainer->at(mLastCount) == mItemEoln ) return true;
+      while( mLastCount < mContainer.itemCount() ) {
+        if( mLastCount >= mCountMax ) return true;
+        if( mContainer.at(mLastCount) == mItemEoln ) return true;
         else mLastCount++;
+        }
       return false;
       }
 

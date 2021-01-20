@@ -2,7 +2,7 @@
 #include "SaliMCore.h"
 
 #ifndef SM_TASK_MAX
-  #define SM_TASK_MAX 8
+  #define SM_TASK_MAX 16
 #endif
 
 
