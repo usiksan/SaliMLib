@@ -92,7 +92,9 @@ extern "C" {
 //! \brief smTickCount System tick counter
 //!
 //! smTickCount used for implementing timers and other functions for working with time intervals
+#ifndef smTickCount
 extern volatile int smTickCount;
+#endif
 
 //!
 //! \brief smInit        Initialise sheduler
