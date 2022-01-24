@@ -46,13 +46,16 @@
      v0.1  created library core as alternative to RTOS and state-machine algorithms
      v0.2  refactoring fixed containers to unified interface
      v0.3  appended smUpperRound template function
+     v0.4  appended smWrap template function
+           appended SmPair template class and SmTrio template class to represent two and three values
+     v0.5  appended smWait_XXX_AndTime functions as waiting some event OR timeout exceed
    */
 #ifndef SALIMCORE_H
 #define SALIMCORE_H
 
 
 #define SM_VERSION_MAJOR 0
-#define SM_VERSION_MINOR 3
+#define SM_VERSION_MINOR 5
 
 
 
@@ -178,13 +181,29 @@ inline SmValue smBound( SmValue minVal, SmValue val, SmValue maxVal ) { return v
 
 
 //!
+//! \brief smWrap Wraps value with bounds. In different of smUpperRound this version supports nonzero low bound
+//! \param minVal Min value for bound (inclusive)
+//! \param val    Value to wrap
+//! \param maxVal Max value for bound (exclusive)
+//! \return       Wraped value
+//!
+template <class SmValue>
+inline SmValue smWrap( SmValue minVal, SmValue val, SmValue maxVal )
+  {
+  if( val >= maxVal ) return (val - (maxVal - minVal));
+  if( val < minVal ) return (val + (maxVal - minVal));
+  return val;
+  }
+
+
+//!
 //! \brief smUpperRound Rounds value val inside bound. For example, if val = 15 and bound = 10 then rounded value will be 5.
 //! \param val          Value to be need rounded
 //! \param bound        Bound inside round
 //! \return             Rounded value
 //!
 template <class SmValue>
-inline SmValue smUpperRound( SmValue val, SmValue bound ) { return val >= bound ? val - bound : val; }
+inline SmValue smUpperRound( SmValue val, SmValue bound ) { return smWrap( 0, val, bound); }
 
 //! @} helperFunctions
 
@@ -280,6 +299,37 @@ void smTaskCreateClass( unsigned stackCellSize, SmClass *cls, void (*taskFunctio
     @{
 
     */
+
+
+
+//!
+//! \brief The SmPair template struct used to transfer pair of any values to wait function in smWait<> template
+//!
+template <typename SmValue1, typename SmValue2>
+struct SmPair {
+    SmValue1 mValue1; //!< First value
+    SmValue2 mValue2; //!< Second value
+
+    SmPair( SmValue1 val1, SmValue2 val2 ) : mValue1(val1), mValue2(val2) {}
+  };
+
+
+
+
+//!
+//! \brief The SmTrio template struct used to transfer trio of any values to wait function in smWait<> template
+//!
+template <typename SmValue1, typename SmValue2, typename SmValue3>
+struct SmTrio {
+    SmValue1 mValue1; //!< First value
+    SmValue2 mValue2; //!< Second value
+    SmValue3 mValue3; //!< Third value
+
+    SmTrio( SmValue1 val1, SmValue2 val2, SmValue3 val3 ) : mValue1(val1), mValue2(val2), mValue3(val3) {}
+  };
+
+
+
 
 //!
 //! \brief SmWaitFunction Wait function prototype. It take one argument as pointer to void and return bool as result.
@@ -383,6 +433,94 @@ inline void smWaitIntUntilNotZero( int *arg )
   {
   smWait<int>( arg, [] ( int *arg ) -> bool { return *arg != 0; } );
   }
+
+
+//!
+//! \brief smWaitAndFuture Helper function which wait until fun return true or future will come
+//! \param future          Future value. This value returned by function smTickFuture
+//! \param fun             Function to test. When this function returns true smWaitAndFuture will return true
+//! \return                true when fun return true or false when future will come
+//!
+inline bool smWaitAndFuture( int future, bool (*fun) () )
+  {
+  //Internal structure to hold pair future value and test function
+  struct SmWaitAndTime
+    {
+      int  mFuture;   //Future value
+      bool (*mFun)(); //Test function
+    } w;
+
+  //Fill structure with params
+  w.mFuture = future;
+  w.mFun    = fun;
+
+  //Call wait function
+  smWait<SmWaitAndTime>( &w, [] (SmWaitAndTime *w) ->bool { return smTickIsOut(w->mFuture) || w->mFun(); } );
+
+  //Return result
+  return !smTickIsOut(future);
+  }
+
+
+
+//!
+//! \brief smWaitAndFuture Helper function which wait until fun return true or tickOut elapsed
+//! \param tickOut         TickOut value
+//! \param fun             Function to test. When this function returns true smWaitAndFuture will return true
+//! \return                true when fun return true or false when tickOut elapsed
+//!
+inline bool smWaitAndTick( int tickOut, bool (*fun)() )
+  {
+  return smWaitAndFuture( smTickFuture(tickOut), fun );
+  }
+
+
+
+//!
+//! \brief smWaitAndFutureArg1 Template function which work same as smWaitAndFuture but test function accept one argument
+//! \param future              Future value. This value returned by function smTickFuture
+//! \param arg1                Argument for test function
+//! \param fun                 Function to test. When this function returns true smWaitAndFuture will return true
+//! \return                    true when fun return true or false when future will come
+//!
+template<class SmArg1>
+inline bool smWaitAndFutureArg1( int future, SmArg1 arg1, bool (*fun)( SmArg1 ) )
+  {
+  //Internal structure to hold association future value, test function and argument for test function
+  struct SmWaitAndTime
+    {
+      int     mFuture;            //Future value
+      SmArg1  mArg1;              //Argument for test function
+      bool    (*mFun)( SmArg1 );  //Test function with arg
+    } w;
+
+  //Fill structure with params
+  w.mFuture = future;
+  w.mArg1   = arg1;
+  w.mFun    = fun;
+
+  //Call wait function
+  smWait<SmWaitAndTime>( &w, [] (SmWaitAndTime *w) ->bool { return smTickIsOut(w->mFuture) || w->mFun( w->mArg1 ); } );
+
+  //Return result
+  return smTickIsOut(future);
+  }
+
+
+
+//!
+//! \brief smWaitAndTickArg1 Helper function which wait until fun return true or tickOut elapsed
+//! \param tickOut           TickOut value
+//! \param arg1              Argument for test function
+//! \param fun               Function to test. When this function returns true smWaitAndFuture will return true
+//! \return                  true when fun return true or false when tickOut elapsed
+//!
+template<class SmArg1>
+inline bool smWaitAndTickArg1( int tickOut, SmArg1 arg1, bool (*fun)( SmArg1 ) )
+  {
+  return smWaitAndFutureArg1<SmArg1>( smTickFuture(tickOut), arg1, fun );
+  }
+
 
 
 //!
@@ -927,7 +1065,19 @@ class SmFixedBuffer {
       mCount -= count;
       }
 
+
+    //!
+    //! \brief receiv Receiv single item into buffer. Item placed into buffer if there is anough space in them
+    //! \param item   Received item
+    //!
+    void receiv( Item item ) {
+      if( emptyCount() )
+        mBuffer[mCount++] = item;
+      }
+
   };
+
+
 
 //! @} fixedContainers
 
