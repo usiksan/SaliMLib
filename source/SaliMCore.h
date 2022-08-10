@@ -503,7 +503,7 @@ inline bool smWaitAndFutureArg1( int future, SmArg1 arg1, bool (*fun)( SmArg1 ) 
   smWait<SmWaitAndTime>( &w, [] (SmWaitAndTime *w) ->bool { return smTickIsOut(w->mFuture) || w->mFun( w->mArg1 ); } );
 
   //Return result
-  return smTickIsOut(future);
+  return !smTickIsOut(future);
   }
 
 

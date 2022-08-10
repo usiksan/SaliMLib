@@ -40,6 +40,34 @@ int32_t  smUnpackInt32( const uint8_t *src )
 
 
 
+
+
+//!
+//! \brief smUnpackUInt24 Unpack uint24 from array. It uses 3 bytes
+//! \param src            Array with packed value
+//! \return               uint32 value
+//!
+uint32_t smUnpackUInt24( const uint8_t *src )
+  {
+  return ((src[0] << 16) | (src[1] << 8) | (src[2]));
+  }
+
+
+//!
+//! \brief smUnpackInt24 Unpack int24 from array. It uses 3 bytes
+//! \param src           Array with packed value
+//! \return              int32 value
+//!
+int32_t  smUnpackInt24( const uint8_t *src )
+  {
+  int32_t tmp = ((src[0] << 16) | (src[1] << 8) | (src[2]));
+  return tmp & 0x800000 ? tmp | 0xff000000 : tmp;
+  }
+
+
+
+
+
 //!
 //! \brief smUnpackUInt16 Unpack uint16 from array. It uses 2 bytes
 //! \param src            Array with packed value
@@ -91,6 +119,34 @@ void smPackInt32(  int32_t val, uint8_t *dst )
   dst[1] = (val >> 16) & 0xff;
   dst[2] = (val >> 8) & 0xff;
   dst[3] = (val ) & 0xff;
+  }
+
+
+
+
+//!
+//! \brief smPackUInt24 Pack uint24 value into array. Packed value occupies 3 bytes
+//! \param val          Value to pack
+//! \param dst          Array to which to pack value. It must be at least 3 bytes
+//!
+void smPackUInt24( uint32_t val, uint8_t *dst )
+  {
+  dst[0] = (val >> 16) & 0xff;
+  dst[1] = (val >> 8) & 0xff;
+  dst[2] = (val ) & 0xff;
+  }
+
+
+//!
+//! \brief smPackInt24 Pack int24 value into array. Packed value occupies 3 bytes
+//! \param val         Value to pack
+//! \param dst         Array to which to pack value. It must be at least 3 bytes
+//!
+void smPackInt24( int32_t val, uint8_t *dst )
+  {
+  dst[0] = (val >> 16) & 0xff;
+  dst[1] = (val >> 8) & 0xff;
+  dst[2] = (val ) & 0xff;
   }
 
 
