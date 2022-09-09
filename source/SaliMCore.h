@@ -49,13 +49,14 @@
      v0.4  appended smWrap template function
            appended SmPair template class and SmTrio template class to represent two and three values
      v0.5  appended smWait_XXX_AndTime functions as waiting some event OR timeout exceed
+     v0.6  appended smWaitTickUntil function
    */
 #ifndef SALIMCORE_H
 #define SALIMCORE_H
 
 
 #define SM_VERSION_MAJOR 0
-#define SM_VERSION_MINOR 5
+#define SM_VERSION_MINOR 6
 
 
 
@@ -528,6 +529,17 @@ inline bool smWaitAndTickArg1( int tickOut, SmArg1 arg1, bool (*fun)( SmArg1 ) )
 //! \param timeOut    Waiting time out
 //!
 void smWaitTick( int timeOut );
+
+
+//!
+//! \brief smWaitTickUntil Helper function for waiting specified moment in the future. It resume this task after system tick count reach this moment
+//! \param futureTime      Moment in the future
+//!
+inline void smWaitTickUntil( int futureTime )
+  {
+  //Wait this moment
+  smWait<int>( &futureTime, [] ( int *timeOutArg ) -> bool { return smTickIsOut( *timeOutArg ); } );
+  }
 
 
 //!
