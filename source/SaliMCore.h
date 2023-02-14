@@ -50,13 +50,14 @@
            appended SmPair template class and SmTrio template class to represent two and three values
      v0.5  appended smWait_XXX_AndTime functions as waiting some event OR timeout exceed
      v0.6  appended smWaitTickUntil function
+     v0.7  appended smWaitTickXXXHard functions
    */
 #ifndef SALIMCORE_H
 #define SALIMCORE_H
 
 
 #define SM_VERSION_MAJOR 0
-#define SM_VERSION_MINOR 6
+#define SM_VERSION_MINOR 7
 
 
 
@@ -529,6 +530,27 @@ inline bool smWaitAndTickArg1( int tickOut, SmArg1 arg1, bool (*fun)( SmArg1 ) )
 //! \param timeOut    Waiting time out
 //!
 void smWaitTick( int timeOut );
+
+
+//!
+//! \brief smWaitTickUntilHard Helper function for waiting specified moment in the future. When waiting this function do nothing, so it not used multitasking
+//! \param futureTime          Moment in the future
+//!
+inline void smWaitTickUntilHard( int futureTime )
+  {
+  while( !smTickIsOut(futureTime) );
+  }
+
+
+
+//!
+//! \brief smWaitTickHard Helper function for waiting specified timeOut. When waiting this function do nothing, so it not used multitasking
+//! \param timeOut        Waiting time out
+//!
+inline void smWaitTickHard( int timeOut )
+  {
+  smWaitTickUntilHard( smTickFuture(timeOut) );
+  }
 
 
 //!
